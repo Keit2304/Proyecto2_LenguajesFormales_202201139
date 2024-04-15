@@ -1,5 +1,6 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog, filedialog
+import os
 
 class IDEWindow:
     def __init__(self, master):
@@ -51,8 +52,28 @@ class IDEWindow:
         self.code_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     def nuevo_archivo(self):
-        
-        print("Nuevo archivo")
+        # Verificar si hay contenido en el área de edición
+        contenido_actual = self.code_area.get("1.0", "end-1c")
+        if contenido_actual.strip():
+            # Hay contenido, preguntar si desea guardar cambios
+            respuesta = messagebox.askyesnocancel("Nuevo archivo", "¿Desea guardar los cambios en el archivo actual antes de crear uno nuevo?")
+            if respuesta is None:
+                # El usuario canceló la operación
+                return
+            elif respuesta:
+                # El usuario quiere guardar los cambios
+                self.guardar_como_archivo()
+    
+        # Limpiar el área de edición
+        self.code_area.delete("1.0", "end")
+
+        # Preguntar el nombre y ruta del nuevo archivo
+        nombre_archivo = simpledialog.askstring("Nuevo archivo", "Ingrese el nombre del nuevo archivo:")
+        if nombre_archivo:
+            ruta_archivo = filedialog.asksaveasfilename(initialfile=nombre_archivo, defaultextension=".txt", filetypes=[("Archivos de texto", "*.txt")])
+            if ruta_archivo:
+                # Actualizar el título de la ventana con el nombre del archivo
+                self.master.title(f"Proyecto #2 - LFP - Keitlyn Tunchez - 202201139 - {os.path.basename(ruta_archivo)}")  
 
     def abrir_archivo(self):
         
