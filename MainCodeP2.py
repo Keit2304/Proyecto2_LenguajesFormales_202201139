@@ -18,8 +18,13 @@ def nuevo_archivo(code_area, master):
     
     code_area.delete("1.0", "end")
 
-def abrir_archivo():
-    print("Abrir archivo")
+def abrir_archivo(code_area):
+    ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
+    if ruta_archivo:
+        with open(ruta_archivo, "r", encoding="utf-8") as file:
+            contenido = file.read()
+            code_area.delete("1.0", "end")
+            code_area.insert("1.0", contenido)
 
 def guardar_archivo():
     print("Guardar archivo")
@@ -72,7 +77,7 @@ def ventana():
 
     # Opciones del menú Archivo
     file_menu.add_command(label="Nuevo", command=lambda: nuevo_archivo(code_area, root))
-    file_menu.add_command(label="Abrir", command=abrir_archivo)
+    file_menu.add_command(label="Abrir", command=lambda: abrir_archivo(code_area))
     file_menu.add_command(label="Guardar", command=guardar_archivo)
     file_menu.add_command(label="Guardar Como", command=lambda: guardar_como_archivo(code_area))
     file_menu.add_separator()
