@@ -2,39 +2,45 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog
 import os
 
+archivo_actual = None  # Variable global para almacenar la ruta del archivo actualmente abierto
+
 def nuevo_archivo(code_area, master):
-    
     contenido_actual = code_area.get("1.0", "end-1c")
     if contenido_actual.strip():
-        
         respuesta = messagebox.askyesnocancel("Nuevo archivo", "¿Desea guardar los cambios en el archivo actual antes de crear uno nuevo?")
         if respuesta is None:
-            
             return
         elif respuesta:
-            
             guardar_como_archivo(code_area)
-    
-    
     code_area.delete("1.0", "end")
 
 def abrir_archivo(code_area):
+    global archivo_actual
     ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
     if ruta_archivo:
         with open(ruta_archivo, "r", encoding="utf-8") as file:
             contenido = file.read()
             code_area.delete("1.0", "end")
             code_area.insert("1.0", contenido)
+            archivo_actual = ruta_archivo
 
-def guardar_archivo():
-    print("Guardar archivo")
+def guardar_archivo(code_area):
+    global archivo_actual
+    if archivo_actual:
+        contenido = code_area.get("1.0", "end-1c")
+        with open(archivo_actual, "w") as file:
+            file.write(contenido)
+    else:
+        guardar_como_archivo(code_area)
 
 def guardar_como_archivo(code_area):
+    global archivo_actual
     ruta_archivo = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Archivos de texto", "*.txt")])
     if ruta_archivo:
         contenido = code_area.get("1.0", "end-1c")
         with open(ruta_archivo, "w") as file:
             file.write(contenido)
+        archivo_actual = ruta_archivo
 
 def salir(master):
     confirmar_salir = messagebox.askyesno("Salir", "¿Está seguro que desea salir del programa?")
@@ -78,7 +84,7 @@ def ventana():
     # Opciones del menú Archivo
     file_menu.add_command(label="Nuevo", command=lambda: nuevo_archivo(code_area, root))
     file_menu.add_command(label="Abrir", command=lambda: abrir_archivo(code_area))
-    file_menu.add_command(label="Guardar", command=guardar_archivo)
+    file_menu.add_command(label="Guardar", command=lambda: guardar_archivo(code_area))
     file_menu.add_command(label="Guardar Como", command=lambda: guardar_como_archivo(code_area))
     file_menu.add_separator()
     file_menu.add_command(label="Salir", command=lambda: salir(root))
