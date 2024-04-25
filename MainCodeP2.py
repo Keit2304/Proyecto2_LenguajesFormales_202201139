@@ -41,6 +41,7 @@ def guardar_como_archivo(code_area):
         with open(ruta_archivo, "w") as file:
             file.write(contenido)
         archivo_actual = ruta_archivo
+    code_area.delete("1.0", "end")
 
 def salir(master):
     confirmar_salir = messagebox.askyesno("Salir", "¿Está seguro que desea salir del programa?")
@@ -48,8 +49,70 @@ def salir(master):
         print("Saliendo del programa")
         master.destroy()
 
-def generar_mongodb():
-    print("Generar sentencias MongoDB")
+def Lexer_NoSQL(code_area):
+    contenido = code_area.get("1.0", "end-1c")
+    sentencias = []
+    inicio_crear = contenido.find("CrearBD")
+    inicio_eliminar = contenido.find("EliminarBD")
+    inicio_crear_coleccion = contenido.find("CrearColeccion")
+    inicio_eliminar_coleccion = contenido.find("EliminarColeccion")
+    inicio_insertar_unico = contenido.find("InsertarUnico")
+    inicio_actualizar_unico = contenido.find("ActualizarUnico")
+
+    while inicio_crear != -1 or inicio_eliminar != -1 or inicio_crear_coleccion != -1 or inicio_eliminar_coleccion != -1 or inicio_insertar_unico != -1 or inicio_actualizar_unico != -1:
+        if inicio_crear != -1:
+            fin_crear = contenido.find(";", inicio_crear)
+            sentencia = contenido[inicio_crear:fin_crear]
+            nombre_BD = sentencia.split()[1]  # Obtenemos el nombre de la base de datos
+            sentencias.append(f"db.createDatabase({nombre_BD});")
+            inicio_crear = contenido.find("CrearBD", fin_crear)
+
+        if inicio_eliminar != -1:
+            fin_eliminar = contenido.find(";", inicio_eliminar)
+            sentencias.append("db.dropDatabase();")
+            inicio_eliminar = contenido.find("EliminarBD", fin_eliminar)
+
+        if inicio_crear_coleccion != -1:
+            inicio_parentesis = contenido.find("(", inicio_crear_coleccion)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            nombre_coleccion = contenido[inicio_parentesis + 1: fin_parentesis].strip('\"')
+            sentencias.append(f"db.createCollection({nombre_coleccion});")
+            inicio_crear_coleccion = contenido.find("CrearColeccion", fin_parentesis)
+
+        if inicio_eliminar_coleccion != -1:
+            inicio_parentesis = contenido.find("(", inicio_eliminar_coleccion)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            nombre_coleccion = contenido[inicio_parentesis + 1: fin_parentesis].strip('\"')
+            sentencias.append(f"db.{nombre_coleccion}.drop();")
+            inicio_eliminar_coleccion = contenido.find("EliminarColeccion", fin_parentesis)
+
+        if inicio_insertar_unico != -1:
+            inicio_parentesis = contenido.find("(", inicio_insertar_unico)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            elementos = contenido[inicio_parentesis + 1: fin_parentesis].split(",", 1)
+            nombre_coleccion = elementos[0].strip('\" ')
+            documento = elementos[1].strip('\" {}')
+            sentencias.append(f"db.{nombre_coleccion}.insert({documento})")
+            inicio_insertar_unico = contenido.find("InsertarUnico", fin_parentesis)
+
+        if inicio_actualizar_unico != -1:
+            inicio_parentesis = contenido.find("(", inicio_actualizar_unico)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            elementos = contenido[inicio_parentesis + 1: fin_parentesis].split(",", 2)
+            nombre_coleccion = elementos[0].strip('\" ')
+            filtro = elementos[1].strip('\" {}')
+            actualizacion = elementos[2].strip('\" {}')
+            sentencias.append(f"db.{nombre_coleccion}.update({filtro}, {actualizacion})")
+            inicio_actualizar_unico = contenido.find("ActualizarUnico", fin_parentesis)
+
+    code_area.delete("1.0", "end")
+    for sentencia in sentencias:
+        code_area.insert("end", sentencia + "\n")
+
+    print("Traducción a MongoDB completada.")
+
+def generar_mongodb(code_area):
+    Lexer_NoSQL(code_area)
 
 def ver_tokens():
     print("Ver Tokens")
@@ -90,7 +153,7 @@ def ventana():
     file_menu.add_command(label="Salir", command=lambda: salir(root))
 
     # Opción del menú Análisis
-    edit_menu.add_command(label="Generar sentencias MongoDB", command=generar_mongodb)
+    edit_menu.add_command(label="Generar sentencias MongoDB", command=lambda: generar_mongodb(code_area))
 
     # Opción del menú Tokens
     view_menu.add_command(label="Ver Tokens", command=ver_tokens)
