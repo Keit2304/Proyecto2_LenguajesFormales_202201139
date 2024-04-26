@@ -1,7 +1,39 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog
+import re
+
 
 archivo_actual = None  # Variable global para almacenar la ruta del archivo actualmente abierto
+
+class Lexema:
+    def __init__(self, tipo, valor, fila, columna):
+        self.tipo = tipo
+        self.valor = valor
+        self.fila = fila
+        self.columna = columna
+
+    def __str__(self):
+        return f"{self.tipo}: {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
+
+# Función para obtener los tokens del código
+def obtener_tokens(contenido):
+    # Patrón para identificar palabras y símbolos
+    patron = r'\b\w+\b|[^\s\w]'
+    tokens = []
+    fila_actual = 1
+    for match in re.finditer(patron, contenido):
+        valor = match.group(0)
+        columna_actual = match.start() - contenido.rfind('\n', 0, match.start()) + 1
+        if columna_actual == 1:
+            fila_actual += 1
+        tokens.append(Lexema("Palabra" if valor.isalpha() else "Simbolo", valor, fila_actual, columna_actual))
+    return tokens
+
+def ver_tokens(code_area):
+    contenido = code_area.get("1.0", "end-1c")
+    tokens = obtener_tokens(contenido)
+    reporte_tokens = "\n".join(str(token) for token in tokens)
+    messagebox.showinfo("Tokens", "Reporte de Tokens:\n\n" + reporte_tokens)
 
 def nuevo_archivo(code_area, master):
     contenido_actual = code_area.get("1.0", "end-1c")
@@ -137,12 +169,8 @@ def Lexer_NoSQL(code_area):
     print("Traducción a MongoDB completada.")
 
 
-
 def generar_mongodb(code_area):
     Lexer_NoSQL(code_area)
-
-def ver_tokens():
-    print("Ver Tokens")
 
 def ventana():
     root = tk.Tk()
@@ -165,11 +193,12 @@ def ventana():
     edit_menu = tk.Menu(menubar)
     view_menu = tk.Menu(menubar)
     help_menu = tk.Menu(menubar)
+    errors_menu = tk.Menu(menubar)
 
     menubar.add_cascade(label="Archivo", menu=file_menu)
     menubar.add_cascade(label="Análisis", menu=edit_menu)
     menubar.add_cascade(label="Tokens", menu=view_menu)
-    menubar.add_cascade(label="Errores", menu=help_menu)
+    menubar.add_cascade(label="Errores", menu=errors_menu)
 
     # Opciones del menú Archivo
     file_menu.add_command(label="Nuevo", command=lambda: nuevo_archivo(code_area, root))
@@ -183,7 +212,10 @@ def ventana():
     edit_menu.add_command(label="Generar sentencias MongoDB", command=lambda: generar_mongodb(code_area))
 
     # Opción del menú Tokens
-    view_menu.add_command(label="Ver Tokens", command=ver_tokens)
+    view_menu.add_command(label="Ver Tokens", command=lambda: ver_tokens(code_area))
+
+    # Opción del menú Errores
+    errors_menu.add_command(label="Ver Errores", command=lambda: ver_errores())
 
     # Crear el área de edición de código
     code_label = tk.Label(root, text="Archivo de entrada:")
