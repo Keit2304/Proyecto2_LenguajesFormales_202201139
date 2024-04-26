@@ -30,9 +30,18 @@ class SimboloToken(Token):
     def __str__(self):
         return f"{self.tipo}: - {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
 
+class ErrorToken(Token):
+    def __init__(self, valor, fila, columna):
+        super().__init__(valor, fila, columna)
+        self.tipo = "Error"
+
+    def __str__(self):
+        return f"{self.tipo}: - {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
+
 def obtener_tokens(contenido):
     patron = r'\b\w+\b|[^\s\w]'
     tokens = []
+    errores = []
     fila_actual = 1
     for match in re.finditer(patron, contenido):
         valor = match.group(0)
@@ -41,16 +50,26 @@ def obtener_tokens(contenido):
             fila_actual += 1
         if valor.isalpha():
             tokens.append(PalabraToken(valor, fila_actual, columna_actual))
+        elif valor in ["%", "*", "#", "@", "/"] or valor.isdigit():
+            errores.append(ErrorToken(valor, fila_actual, columna_actual))
         else:
             tokens.append(SimboloToken(valor, fila_actual, columna_actual))
-    return tokens
+    return tokens, errores
 
 def ver_tokens(code_area):
     contenido = code_area.get("1.0", "end-1c")
-    tokens = obtener_tokens(contenido)
+    tokens, errores = obtener_tokens(contenido)
     reporte_tokens = "\n".join(str(token) for token in tokens)
     messagebox.showinfo("Tokens", "Reporte de Tokens:\n\n" + reporte_tokens)
 
+def ver_errores(code_area):
+    contenido = code_area.get("1.0", "end-1c")
+    tokens, errores = obtener_tokens(contenido)
+    if errores:
+        reporte_errores = "\n".join(str(error) for error in errores)
+        messagebox.showinfo("Errores", "Reporte de Errores:\n\n" + reporte_errores)
+    else:
+        messagebox.showinfo("Errores", "No se encontraron errores en el archivo.")
 
 def nuevo_archivo(code_area, master):
     contenido_actual = code_area.get("1.0", "end-1c")
@@ -232,7 +251,7 @@ def ventana():
     view_menu.add_command(label="Ver Tokens", command=lambda: ver_tokens(code_area))
 
     # Opción del menú Errores
-    errors_menu.add_command(label="Ver Errores", command=lambda: ver_errores())
+    errors_menu.add_command(label="Ver Errores", command=lambda: ver_errores(code_area))
 
     # Crear el área de edición de código
     code_label = tk.Label(root, text="Archivo de entrada:")
