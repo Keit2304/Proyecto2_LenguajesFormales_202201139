@@ -5,19 +5,32 @@ import re
 
 archivo_actual = None  # Variable global para almacenar la ruta del archivo actualmente abierto
 
-class Lexema:
-    def __init__(self, tipo, valor, fila, columna):
-        self.tipo = tipo
+class Token:
+    def __init__(self, valor, fila, columna):
         self.valor = valor
         self.fila = fila
         self.columna = columna
 
     def __str__(self):
-        return f"{self.tipo}: {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
+        return f"{self.valor} - Columna: {self.fila}, Fila: {self.columna}"
 
-# Función para obtener los tokens del código
+class PalabraToken(Token):
+    def __init__(self, valor, fila, columna):
+        super().__init__(valor, fila, columna)
+        self.tipo = "Palabra"
+
+    def __str__(self):
+        return f"{self.tipo}: - {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
+
+class SimboloToken(Token):
+    def __init__(self, valor, fila, columna):
+        super().__init__(valor, fila, columna)
+        self.tipo = "Simbolo"
+
+    def __str__(self):
+        return f"{self.tipo}: - {self.valor} - Columna: {self.fila}, Fila: {self.columna}"
+
 def obtener_tokens(contenido):
-    # Patrón para identificar palabras y símbolos
     patron = r'\b\w+\b|[^\s\w]'
     tokens = []
     fila_actual = 1
@@ -26,7 +39,10 @@ def obtener_tokens(contenido):
         columna_actual = match.start() - contenido.rfind('\n', 0, match.start()) + 1
         if columna_actual == 1:
             fila_actual += 1
-        tokens.append(Lexema("Palabra" if valor.isalpha() else "Simbolo", valor, fila_actual, columna_actual))
+        if valor.isalpha():
+            tokens.append(PalabraToken(valor, fila_actual, columna_actual))
+        else:
+            tokens.append(SimboloToken(valor, fila_actual, columna_actual))
     return tokens
 
 def ver_tokens(code_area):
@@ -34,6 +50,7 @@ def ver_tokens(code_area):
     tokens = obtener_tokens(contenido)
     reporte_tokens = "\n".join(str(token) for token in tokens)
     messagebox.showinfo("Tokens", "Reporte de Tokens:\n\n" + reporte_tokens)
+
 
 def nuevo_archivo(code_area, master):
     contenido_actual = code_area.get("1.0", "end-1c")
