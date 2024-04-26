@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, filedialog
-import os
+from tkinter import messagebox, filedialog
 
 archivo_actual = None  # Variable global para almacenar la ruta del archivo actualmente abierto
 
@@ -58,13 +57,16 @@ def Lexer_NoSQL(code_area):
     inicio_eliminar_coleccion = contenido.find("EliminarColeccion")
     inicio_insertar_unico = contenido.find("InsertarUnico")
     inicio_actualizar_unico = contenido.find("ActualizarUnico")
+    inicio_eliminar_unico = contenido.find("EliminarUnico")
+    inicio_buscar_todo = contenido.find("BuscarTodo")
+    inicio_buscar_unico = contenido.find("BuscarUnico")
 
-    while inicio_crear != -1 or inicio_eliminar != -1 or inicio_crear_coleccion != -1 or inicio_eliminar_coleccion != -1 or inicio_insertar_unico != -1 or inicio_actualizar_unico != -1:
+    while inicio_crear != -1 or inicio_eliminar != -1 or inicio_crear_coleccion != -1 or inicio_eliminar_coleccion != -1 or inicio_insertar_unico != -1 or inicio_actualizar_unico != -1 or inicio_eliminar_unico != -1 or inicio_buscar_todo != -1 or inicio_buscar_unico != -1:
         if inicio_crear != -1:
             fin_crear = contenido.find(";", inicio_crear)
             sentencia = contenido[inicio_crear:fin_crear]
             nombre_BD = sentencia.split()[1]  # Obtenemos el nombre de la base de datos
-            sentencias.append(f"db.createDatabase({nombre_BD});")
+            sentencias.append(f"use ('{nombre_BD}');")
             inicio_crear = contenido.find("CrearBD", fin_crear)
 
         if inicio_eliminar != -1:
@@ -76,7 +78,7 @@ def Lexer_NoSQL(code_area):
             inicio_parentesis = contenido.find("(", inicio_crear_coleccion)
             fin_parentesis = contenido.find(")", inicio_parentesis)
             nombre_coleccion = contenido[inicio_parentesis + 1: fin_parentesis].strip('\"')
-            sentencias.append(f"db.createCollection({nombre_coleccion});")
+            sentencias.append(f"db.createCollection('{nombre_coleccion}');")
             inicio_crear_coleccion = contenido.find("CrearColeccion", fin_parentesis)
 
         if inicio_eliminar_coleccion != -1:
@@ -92,7 +94,7 @@ def Lexer_NoSQL(code_area):
             elementos = contenido[inicio_parentesis + 1: fin_parentesis].split(",", 1)
             nombre_coleccion = elementos[0].strip('\" ')
             documento = elementos[1].strip('\" {}')
-            sentencias.append(f"db.{nombre_coleccion}.insert({documento})")
+            sentencias.append(f"db.{nombre_coleccion}.insertOne({documento})")
             inicio_insertar_unico = contenido.find("InsertarUnico", fin_parentesis)
 
         if inicio_actualizar_unico != -1:
@@ -102,14 +104,39 @@ def Lexer_NoSQL(code_area):
             nombre_coleccion = elementos[0].strip('\" ')
             filtro = elementos[1].strip('\" {}')
             actualizacion = elementos[2].strip('\" {}')
-            sentencias.append(f"db.{nombre_coleccion}.update({filtro}, {actualizacion})")
+            sentencias.append(f"db.{nombre_coleccion}.updateOne({filtro}, {actualizacion})")
             inicio_actualizar_unico = contenido.find("ActualizarUnico", fin_parentesis)
+
+        if inicio_eliminar_unico != -1:
+            inicio_parentesis = contenido.find("(", inicio_eliminar_unico)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            elementos = contenido[inicio_parentesis + 1: fin_parentesis].split(",", 1)
+            nombre_coleccion = elementos[0].strip('\" ')
+            filtro = elementos[1].strip('\" {}')
+            sentencias.append(f"db.{nombre_coleccion}.deleteOne({filtro})")
+            inicio_eliminar_unico = contenido.find("EliminarUnico", fin_parentesis)
+
+        if inicio_buscar_todo != -1:
+            inicio_parentesis = contenido.find("(", inicio_buscar_todo)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            nombre_coleccion = contenido[inicio_parentesis + 1: fin_parentesis].strip('\" ')
+            sentencias.append(f"db.{nombre_coleccion}.find();")
+            inicio_buscar_todo = contenido.find("BuscarTodo", fin_parentesis)
+
+        if inicio_buscar_unico != -1:
+            inicio_parentesis = contenido.find("(", inicio_buscar_unico)
+            fin_parentesis = contenido.find(")", inicio_parentesis)
+            nombre_coleccion = contenido[inicio_parentesis + 1: fin_parentesis].strip('\" ')
+            sentencias.append(f"db.{nombre_coleccion}.findOne();")
+            inicio_buscar_unico = contenido.find("BuscarUnico", fin_parentesis)
 
     code_area.delete("1.0", "end")
     for sentencia in sentencias:
         code_area.insert("end", sentencia + "\n")
 
     print("Traducción a MongoDB completada.")
+
+
 
 def generar_mongodb(code_area):
     Lexer_NoSQL(code_area)
