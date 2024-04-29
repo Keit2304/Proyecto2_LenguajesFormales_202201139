@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import re
 
-
 archivo_actual = None  # Variable global para almacenar la ruta del archivo actualmente abierto
 
 class Token:
@@ -85,11 +84,15 @@ def abrir_archivo(code_area):
     global archivo_actual
     ruta_archivo = filedialog.askopenfilename(filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
     if ruta_archivo:
-        with open(ruta_archivo, "r", encoding="utf-8") as file:
-            contenido = file.read()
-            code_area.delete("1.0", "end")
-            code_area.insert("1.0", contenido)
-            archivo_actual = ruta_archivo
+        try:
+            with open(ruta_archivo, "r", encoding="utf-8") as file:
+                contenido = file.read()
+        except UnicodeDecodeError:
+            with open(ruta_archivo, "r", encoding="latin1") as file:
+                contenido = file.read()
+        code_area.delete("1.0", "end")
+        code_area.insert("1.0", contenido)
+        archivo_actual = ruta_archivo
 
 def guardar_archivo(code_area):
     global archivo_actual
@@ -203,7 +206,6 @@ def Lexer_NoSQL(code_area):
         code_area.insert("end", sentencia + "\n")
 
     print("Traducción a MongoDB completada.")
-
 
 def generar_mongodb(code_area):
     Lexer_NoSQL(code_area)
